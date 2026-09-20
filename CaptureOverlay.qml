@@ -49,11 +49,15 @@ Variants {
         readonly property string freezeUrl: (root.ctl && root.ctl.freezes[screenName]) ? "file://" + root.ctl.freezes[screenName] : ""
         readonly property bool useScreencopy: root.ctl && root.ctl.backend === "screencopy"
 
-        // dimmable: the grab has returned, so painting can no longer leak into
-        // it. The live desktop underneath is the same picture as the frozen
-        // frame, so dimming before the frame is decoded looks seamless.
+        // dimmable: the frame has been captured, so nothing painted from now
+        // on can leak into it. Until then the window stays fully transparent:
+        // the compositor renders the screencopy frame at its next redraw, and
+        // if something else is animating that redraw comes after our first
+        // frame. With the cli backend the grab has to return; the live
+        // desktop underneath is the same picture as the frame, so dimming
+        // before the PNG is decoded looks seamless.
         // frameReady: the frame is on screen. Export waits for it.
-        readonly property bool dimmable: root.ctl && !root.ctl.capturing
+        readonly property bool dimmable: root.ctl && (useScreencopy ? frozen.hasContent : !root.ctl.capturing)
         readonly property bool frameReady: useScreencopy ? frozen.hasContent : freezeImage.status === Image.Ready
 
         onFrameReadyChanged: {
